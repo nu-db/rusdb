@@ -1,0 +1,93 @@
+name: Squash and Merge to Both Repositories with Label
+
+on:
+  pull_request:
+    types:
+      - labeled
+      - unlabeled
+      - opened
+      - synchronize
+
+permissions:
+  contents: write
+
+jobs:
+  squash-and-merge:
+    if: contains(github.event.pull_request.labels.*.name, 'squash-merge')
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout private repo
+        uses: actions/checkout@v3
+
+      - name: Set up Git
+        run: |
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Check if 'squash-merge' label is applied
+        run: |
+          LABELS=$(jq -r '.pull_request.labels | map(.name) | join(", ")' "${GITHUB_EVENT_PATH}")
+          if [[ ! "$LABELS" =~ "squash-merge" ]]; then
+            echo "The 'squash-merge' label is not applied. Exiting."
+            exit 0
+          fi
+
+      - name: Get default branch with authentication
+        id: get_default_branch
+        run: |
+          # Authenticate using GITHUB_TOKEN (or use a personal access token if needed)
+          DEFAULT_BRANCH=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" -s https://api.github.com/repos/${{ github.repository }} | jq -r .default_branch)
+          echo "Default branch from GitHub API: $DEFAULT_BRANCH"
+          echo "default_branch=$DEFAULT_BRANCH" >> $GITHUB_ENV
+
+      - name: Fetch and merge PR changes (squash) with authentication
+        run: |
+          PR_BRANCH="${{ github.event.pull_request.head.ref }}"
+          echo "PR branch name: $PR_BRANCH"
+          git fetch origin
+          git checkout ${{ env.default_branch }}  # Check out the default branch
+          git merge --squash origin/$PR_BRANCH
+          git commit -m "Squash merge PR #${{ github.event.pull_request.number }}"
+          git config --global credential.helper store
+          echo "https://${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
+
+      - name: Push changes to private repository with authentication using PAT
+        run: |
+          echo "Pushing changes to the private repository"
+          git config --global credential.helper store
+          echo "https://${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
+          git push origin ${{ env.default_branch }} 
+
+      - name: We can't get authorized to push to the public repository without this.
+        run: |
+          # Remove the extra header that GitHub Actions automatically adds
+          git config --unset-all http.https://github.com/.extraheader 
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git config --global url.https://${{ secrets.PAT_READ_WRITE }}@github.com/.insteadOf https://github.com/
+
+      - name: Add public repository as a remote
+        run: |
+          echo "Pushing changes to the public repository"
+          git config --global credential.helper store
+          echo "https://${{ secrets.PAT_READ_WRITE }}@github.com" > ~/.git-credentials 
+          git remote add public https://github.com/nu-db/rusdb.git
+          git fetch public 
+          
+          # Debugging: Show the current git configuration
+          git config --list
+          
+          # Debugging: Show the remotes to ensure we're pushing to the correct one
+          git remote -v
+          
+          # Debugging: Confirm the current user
+          git config user.name
+          git config user.email
+
+      - name: Push changes to public repository
+        run: |
+          echo "Pushing changes to the public repository"
+          git config --global credential.helper store
+          echo "https://${{ secrets.PAT_READ_WRITE }}@github.com" > ~/.git-credentials
+          git push public main
