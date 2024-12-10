@@ -1,0 +1,4 @@
+# Generated tables
+/data/*
+# ...but don't ignore the folder itself or its README
+!data/README.md
