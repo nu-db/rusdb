@@ -1,0 +1,16 @@
+[package]
+name = "rustdb-execution"
+version = "0.2.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+homepage.workspace = true
+repository.workspace = true
+# documentation = "https://docs.rs/rustdb-storage"
+description = "The execution engine for the Rustdb pedagogical database management system."
+
+[dependencies]
+serde.workspace = true
+
+[lints]
+workspace = true
