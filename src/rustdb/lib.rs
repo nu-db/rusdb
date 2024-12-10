@@ -1,6 +1,4 @@
 pub fn add(left: u64, right: u64) -> u64 {
-    println!("{} + {} = {}", left, right, left + right);
-    println!("Times had to rebase: 18");
     left + right
 }
 
