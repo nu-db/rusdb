@@ -1,4 +1,7 @@
-name: Squash and Merge to Both Repositories with Label
+# Work in progress.
+# Currently, doesn't close the PR even though that is the intended behavior.
+
+name: Squash and Merge Pull Request with Label
 
 on:
   pull_request:
@@ -21,7 +24,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Set up Git
-        run: |
+        run: |          
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
 
@@ -57,37 +60,12 @@ jobs:
           echo "Pushing changes to the private repository"
           git config --global credential.helper store
           echo "https://${{ secrets.GITHUB_TOKEN }}@github.com" > ~/.git-credentials
-          git push origin ${{ env.default_branch }} 
+          git push origin ${{ env.default_branch }}
 
-      - name: We can't get authorized to push to the public repository without this.
+      - name: Close the pull request
         run: |
-          # Remove the extra header that GitHub Actions automatically adds
-          git config --unset-all http.https://github.com/.extraheader 
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
-          git config --global url.https://${{ secrets.PAT_READ_WRITE }}@github.com/.insteadOf https://github.com/
-
-      - name: Add public repository as a remote
-        run: |
-          echo "Pushing changes to the public repository"
-          git config --global credential.helper store
-          echo "https://${{ secrets.PAT_READ_WRITE }}@github.com" > ~/.git-credentials 
-          git remote add public https://github.com/nu-db/rusdb.git
-          git fetch public 
-          
-          # Debugging: Show the current git configuration
-          git config --list
-          
-          # Debugging: Show the remotes to ensure we're pushing to the correct one
-          git remote -v
-          
-          # Debugging: Confirm the current user
-          git config user.name
-          git config user.email
-
-      - name: Push changes to public repository
-        run: |
-          echo "Pushing changes to the public repository"
-          git config --global credential.helper store
-          echo "https://${{ secrets.PAT_READ_WRITE }}@github.com" > ~/.git-credentials
-          git push public main
+          echo "Closing the pull request"
+          curl -X PATCH \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -d '{"state": "closed"}' \
+            "https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}"
