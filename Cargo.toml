@@ -16,6 +16,7 @@ repository = "https://github.com/nu-db/rustdb"
 
 [workspace.dependencies]
 serde = "1.0.204"
+tokio = { version = "1.42.0", features = ["sync"] }
 
 [workspace.lints.rustdoc]
 private_intra_doc_links = "allow"
