@@ -109,6 +109,13 @@ name = "rustdb-dev"
 version = "0.1.0"
 
 [[package]]
+name = "rustdb-error"
+version = "0.1.0"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "rustdb-execution"
 version = "0.2.0"
 dependencies = [
