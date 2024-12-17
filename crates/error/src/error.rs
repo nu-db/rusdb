@@ -84,6 +84,6 @@ impl<T> From<std::sync::PoisonError<T>> for Error {
     fn from(e: std::sync::PoisonError<T>) -> Self {
         // This occurs when a different thread panics when holding a mutex. Since this is
         // fatal, we should panic here too.
-        panic!("{err}")
+        panic!("{e}")
     }
 }

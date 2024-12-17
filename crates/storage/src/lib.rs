@@ -9,3 +9,5 @@
 
 mod disk;
 mod lock;
+
+const PAGE_SIZE_BYTES: usize = 4096;
